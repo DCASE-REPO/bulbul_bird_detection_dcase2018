@@ -2,7 +2,7 @@
 
 This is a submission for the [bird audio detection challenge 2017](http://machine-listening.eecs.qmul.ac.uk/bird-audio-detection-challenge/) using convolutional neural networks (CNNs) working on spectrograms.
 
-Contact address: Thomas Grill <thomas.grill@ofai.at>
+Contact address: Thomas Grill (thomas.grill@ofai.at)
 
 ## Description:
 

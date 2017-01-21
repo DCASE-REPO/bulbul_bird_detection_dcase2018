@@ -3,8 +3,8 @@
 # Training and evaluation for bird challenge 
 # Thomas Grill <thomas.grill@ofai.at>
 #
-# Training: 6 GiB RAM, 3 GiB GPU RAM
-# Evaluation: 6 GiB RAM, 1.5 GiB GPU RAM
+# Training: 8 GiB RAM, 4 GiB GPU RAM
+# Evaluation: 8 GiB RAM, 2 GiB GPU RAM
 
 
 here="${0%/*}"

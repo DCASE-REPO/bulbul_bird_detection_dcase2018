@@ -11,7 +11,7 @@ Description:
 
 In a first run, the networks train on the whole provided training data and make predictions on the testing data. "Safe" predictions (close to 0 or 1) are then added to the training data as so-called "pseudo-labeled" data. A second run in performed on the extended training set. Afterwards, all predictions are bagged to yield final predictions.
 
-The implementation is done in the Python programming language using numpy, Theano and Lasagne packages, as well as the custom lasagne front-end simplenn. All softwares used are open source and cross-platform. In order for the CNN training to run at acceptable speeds, a GPU is required. Consult the Theano docs for details. Memory requirements are about 6 GiB CPU RAM, and 3 GiB GPU RAM.
+The implementation is done in the Python programming language using numpy, Theano and Lasagne packages, as well as the custom lasagne front-end simplenn. All softwares used are open source and cross-platform. In order for the CNN training to run at acceptable speeds, a GPU is required. Consult the Theano docs for details. Memory requirements are about 8 GiB CPU RAM, and 4 GiB GPU RAM.
 
 
 Required software:

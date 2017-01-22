@@ -5,7 +5,7 @@ model_count=5
 net_width=1000
 
 # network layers
-cnvmult=32
+cnvmult=16
 nl=leaky_rectify
 # augmentation
 featpart="augment:Rotation|augment:Shift(low=-1,high=1,axis=3)"

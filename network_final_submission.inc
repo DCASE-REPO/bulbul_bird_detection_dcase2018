@@ -19,7 +19,7 @@ densepart="Dropout(p=0.5)|Dense(256)|${nl}|Dropout(p=0.5)|Dense(32)|${nl}|Dropou
 net_layers="${featpart}|${normpart}|${convpart}|${densepart}"
 
 # training options
-net_options="--var updates=adam --var batchsize=64 --var epochsize=3000 --var learning_rate_mode=adaptive --var learning_rate=0.001 --var learning_rate_stop=0.00001"
+net_options="--var updates=adam --var batchsize=64 --var epochsize=1500 --var learning_rate_mode=adaptive --var learning_rate=0.001 --var learning_rate_stop=0.00001"
 
 # confidence threshold for pseudo-labeling
 pseudo_threshold=0.1

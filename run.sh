@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Training and evaluation for bird challenge 
+# Training and evaluation for bird challenge
 # Thomas Grill <thomas.grill@ofai.at>
 #
 # Training: 8 GiB RAM, 4 GiB GPU RAM
@@ -47,7 +47,7 @@ function train_model {
     model="$1"  # model including path
     filelists="$2"  # file list to use
     seed=$3
-    
+
     echo "Computing model ${model} with network ${NETWORK}."
 
     "$here/code/simplenn_main.py" \

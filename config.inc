@@ -10,8 +10,8 @@ LABELPATH="/home/thomas/salsa/bird_challenge/labels/"
 AUDIOPATH="/home/thomas/salsa/bird_challenge/audio/"
 # datasets making up the training set
 TRAIN="ff1010bird warblrb10k"
-# datasets making up the testing set
-TEST="testdata"
+# dataset making up the testing set (only one!)
+TEST=testdata
 
 # where to put work data (must be writable)
 WORKPATH="/tmp/bird_workspace/"

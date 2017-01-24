@@ -59,6 +59,8 @@ function train_model {
     --save "${model}.h5" \
     ${net_options} \
     ${cmdargs}
+    
+    echo
 }
 
 #############################
@@ -83,6 +85,8 @@ function evaluate_model {
     --load "${model}.h5" \
     --save "${predictions}.h5" \
     ${cmdargs}
+    
+    echo
 }
 
 
@@ -98,6 +102,7 @@ function stage1_prepare {
     echo "${RED}Preparing spectrograms.${NC}"
     mkdir $SPECTPATH 2> /dev/null
     "$here/code/prepare_spectrograms.sh" "${AUDIOPATH}" "${SPECTPATH}"
+    echo
 }
 
 #############################
@@ -127,6 +132,7 @@ function stage1_train {
             echo "${RED}Using existing model ${model}.${NC}"
         fi
     done
+    echo
 }
 
 #############################
@@ -151,6 +157,7 @@ function stage1_predict {
     echo "${RED}Bagging first stage predictions."
     "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$first_predictions" --out-header
     echo "${RED}Done. First stage predictions are in ${first_predictions}."
+    echo
 }
 
 #############################
@@ -168,6 +175,7 @@ function stage2_prepare {
         cat "$LISTPATH/train" "$LISTPATH/test_pseudo_${h}" > "$LISTPATH/train_pseudo_${h}"
     done
     echo "${RED}Prepared file lists for second stage.${NC}"
+    echo
 }
 
 #############################
@@ -207,6 +215,7 @@ function stage2_train {
             fi
         done
     done
+    echo
 }
 
 #############################################
@@ -232,6 +241,7 @@ function stage2_predict {
     echo "${RED}Bagging final predictions.${NC}"
     "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header
     echo "${RED}Done. Final predictions are in ${final_predictions}.${NC}"
+    echo
 }
 
 ###################################################################

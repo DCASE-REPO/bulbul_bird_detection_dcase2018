@@ -28,9 +28,9 @@ for fn in args.filenames:
         print >>sys.stderr, "Reading", fn
         ids = f5['ids']['id'].value
         if resids is None:
-            resids = list(set(ids))
+            resids = sorted(list(set(ids)))
         else:
-            assert resids == list(set(ids))
+            assert set(resids) == set(ids)
 
         results = f5['results'].value.flatten()
             

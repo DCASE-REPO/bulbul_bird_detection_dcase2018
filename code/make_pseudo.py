@@ -16,6 +16,7 @@ args = parser.parse_args()
 
 fnin = args.filelist
 thr = args.threshold
+folds = args.folds
 fnout = args.out
 
 ok = lambda r: r <= thr or r >= 1.-thr
@@ -29,7 +30,7 @@ with open(fnin, 'r') as fin:
 random.shuffle(ids)
 
 for fold in range(folds):
-    fn = fnout%(dict(fold=fold))
+    fn = fnout%(dict(fold=fold+1))
     with open(fn, 'w') as fout:
         if args.out_header and hdr is not None:
             fout.write(hdr)

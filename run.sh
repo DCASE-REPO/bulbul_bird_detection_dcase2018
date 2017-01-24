@@ -98,10 +98,10 @@ function stage1_prepare {
 # first training run
 #############################
 function stage1_train {
-    echo "First training run."
+    echo "First training stage."
 
     # process model and fold indices
-    if [ ${1:0:1} != '-' ]; then
+    if [ "$1" != "" -a  "${1:0:1}" != '-' ]; then
         # index is given as first argument
         idxs="$1"
         cmdargs="${@:2}"
@@ -114,7 +114,8 @@ function stage1_train {
         model="$WORKPATH/model_first_${i}"
         if [ ! -f "${model}.h5" ]; then # check for existence
             echo "Training model ${model}."
-            train_model "${model}" train ${i} ${cmdargs}
+            res=$(train_model "${model}" train ${i} ${cmdargs})
+            if [ ${res} -ne 0 ]; then return ${res}; fi
             echo "Done training model ${model}."
         else
             echo "Using existing model ${model}."
@@ -133,7 +134,8 @@ function stage1_predict {
         model="$WORKPATH/model_first_${i}"
         prediction="${model}.prediction"
         if [ ! -f "${prediction}.h5" ]; then # check for existence
-            evaluate_model "${model}" test "${prediction}" ${cmdargs}
+            res=$(evaluate_model "${model}" test "${prediction}" ${cmdargs})
+            if [ ${res} -ne 0 ]; then return ${res}; fi
         else
             echo "Using existing predictions ${prediction}."
         fi
@@ -149,7 +151,7 @@ function stage1_predict {
 # compute pseudo_labels
 #############################
 function stage2_prepare {
-    echo "Prepare second run by analyzing first run."
+    echo "Prepare second stage by analyzing first stage."
     
     # filter list by threshold
     # split in half randomly
@@ -159,19 +161,20 @@ function stage2_prepare {
     for h in `seq ${pseudo_folds}`; do
         cat "$LISTPATH/train" "$LISTPATH/test_pseudo_${h}" > "$LISTPATH/train_pseudo_${h}"
     done
+    echo "Prepared file lists for second stage."
 }
 
 #############################
 # second run
 #############################
 function stage2_train {
-    echo "Second training run."
+    echo "Second training stage."
     
     # process model and fold indices
-    if [ ${1:0:1} != '-' ]; then
+    if [ "$1" != "" -a "${1:0:1}" != '-' ]; then
         # index is given as first argument
         idxs="$1"
-        if [ ${2:0:1} != '-' ]; then
+        if [ "$2" != "" -a "${2:0:1}" != '-' ]; then
             # index is given as second argument
             folds="$2"
             cmdargs="${@:3}"
@@ -184,13 +187,14 @@ function stage2_train {
         folds=`seq ${pseudo_folds}`
         cmdargs="${@:1}"
     fi
-
+    
     for i in $idxs; do
         for h in $folds; do
             model="$WORKPATH/model_second_${i}_${h}"
             if [ ! -f "${model}.h5" ]; then # check for existence
                 echo "Training model ${model}."
-                train_model "${model}" "train_pseudo_${h}" $i
+                res=$(train_model "${model}" "train_pseudo_${h}" ${i} ${cmdargs})
+                if [ ${res} -ne 0 ]; then return ${res}; fi
                 echo "Done training model ${model}."
             else
                 echo "Using existing model ${model}."
@@ -211,7 +215,8 @@ function stage2_predict {
             model="$WORKPATH/model_second_${i}_${h}"
             prediction="${model}.prediction"
             if [ ! -f "${prediction}.h5" ]; then # check for existence
-                evaluate_model "${model}" test "${prediction}" ${cmdargs}
+                res=$(evaluate_model "${model}" test "${prediction}" ${cmdargs})
+                if [ ${res} -ne 0 ]; then return ${res}; fi
             else
                 echo "Using existing predictions ${prediction}."
             fi
@@ -232,10 +237,11 @@ if [ "$1" == 'help' -o "$1" == '-help' -o "$1" == '--help' ]; then
     echo "Without any arguments, the full two-stage train/predict sequence is run"
     echo "Subtasks can be run by specifying one of: stage1_prepare, stage1_train, stage1_predict, stage2_prepare, stage2_train, stage2_predict"
     
-elif [ "$1" == "" ]; then
+elif [ "$1" == "" -o "${1:0:1}" == '-' ]; then
     echo "Running full two-stage train/predict sequence"
-    stage1_prepare && stage1_train && stage1_predict && stage2_prepare && stage2_train && stage2_predict
+    cmdargs="${@:1}"
+    stage1_prepare ${cmdargs} && stage1_train ${cmdargs} && stage1_predict ${cmdargs} && stage2_prepare ${cmdargs} && stage2_train ${cmdargs} && stage2_predict ${cmdargs} 
 else
-    echo "Running sub-task $1 with arguments ${@:2}"
+    echo "Running sub-task $1"
     ${@:1}
 fi

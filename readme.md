@@ -11,7 +11,7 @@ Description:
 
 In a first run, the networks train on the whole provided training data and make predictions on the testing data. "Safe" predictions (close to 0 or 1) are then added to the training data as so-called "pseudo-labeled" data. A second run in performed on the extended training set. Afterwards, all predictions are bagged to yield final predictions.
 
-The implementation is done in the Python programming language using numpy, Theano and Lasagne packages, as well as the custom lasagne front-end simplenn. All softwares used are open source and cross-platform. In order for the CNN training to run at acceptable speeds, a GPU is required. Consult the Theano docs for details. Memory requirements are about 8 GiB CPU RAM, and 4 GiB GPU RAM.
+The implementation is done in the Python programming language using numpy, Theano and Lasagne packages, as well as the custom lasagne front-end simplenn. All softwares used are open source and cross-platform. In order for the CNN training to run at acceptable speeds, a GPU is required. Memory requirements are about 8 GiB CPU RAM, and 4 GiB GPU RAM.
 
 
 Required software:
@@ -22,6 +22,8 @@ numpy: http://www.numpy.org/
 Theano: https://github.com/Theano/Theano
 lasagne: https://github.com/Lasagne/Lasagne
 simplenn: https://jobim.ofai.at/gitlab/gr/simplenn (git clone might not work, use archive download)
+
+Detailed installation instructions for Theano and lasagne can be found on https://github.com/Lasagne/Lasagne/wiki/From-Zero-to-Lasagne .
 
 
 Running the training/prediction:
@@ -34,19 +36,25 @@ Running the training/prediction:
 
 With **run.sh**, several steps are executed in sequence:
 
-* Generation of training and testing data filelists
+* **stage1_prepare**: Generation of training and testing data filelists. Generation of spectrograms for the audio files.
 
-* Generation of spectrograms for the audio files
+* **stage1_train**: First training run, producing network models
 
-* First training run, producing network models
+* **stage1_predict**: Predictions based on these models
 
-* Predictions based on these models
+* **stage2_prepare**: Generating pseudo-labeled additional training data
 
-* Generating pseudo-labeled additional training data
+* **stage2_train**: Second training run, producing more network models
 
-* Second training run, producing more network models
-
-* Final predictions, emplying all network models
+* **stage2_predict**: Final predictions, emplying all network models
 
 
 If the spectrogram files, network models or prediction files are already present, they are not regenerated.
+
+
+Advanced use:
+-------------
+
+Each of the steps executed in **run.sh** can be run explicitly by specifying them as the first argument, such as in **run.sh stage1_train**.
+For the training steps, model indices can also be specified, e.g., **run.sh stage1_train 1**, with the index running from 1 to the number of models (typically 5).
+This can be used to train models in parallel, on several GPUs (or CPU cores).

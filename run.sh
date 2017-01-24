@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Training and evaluation for bird challenge
+# Training and prediction for the Bird audio detection challenge 2017
 # Thomas Grill <thomas.grill@ofai.at>
 #
 # Training: 8 GiB RAM, 4 GiB GPU RAM
@@ -8,45 +8,29 @@
 
 
 here="${0%/*}"
-cmdargs="${@:1}"
 
 . "$here/config.inc"
 
 # import network/learning configuration
 . "$here/network_${NETWORK}.inc"
 
-
-#############################
-# prepare file lists
-#############################
-
 LISTPATH="$WORKPATH/filelists"
-
-echo "Preparing file lists."
-mkdir $LISTPATH 2> /dev/null
-"$here/code/create_filelists.py" "$LABELPATH" $TRAIN > "$LISTPATH/train"
-"$here/code/create_filelists.py" "$LABELPATH" $TEST > "$LISTPATH/test"
-
-
-#############################
-# prepare spectrograms
-#############################
-
 SPECTPATH="$WORKPATH/spect"
 
-echo "Preparing spectrograms."
-mkdir $SPECTPATH 2> /dev/null
-"$here/code/prepare_spectrograms.sh" "${AUDIOPATH}" "${SPECTPATH}"
+
+# locations of prediction files
+first_predictions="$WORKPATH/prediction_first.csv"
+final_predictions="$WORKPATH/prediction_final.csv"
 
 
 #############################
 # define training
 #############################
-
 function train_model {
     model="$1"  # model including path
     filelists="$2"  # file list to use
-    seed=$3
+    seed="$3"
+    cmdargs="${@:4}"
 
     echo "Computing model ${model} with network ${NETWORK}."
 
@@ -71,15 +55,14 @@ function train_model {
     ${cmdargs}
 }
 
-
 #############################
 # define evaluation
 #############################
-
 function evaluate_model {
     model="$1"  # model including path
     filelists="$2"  # file list to use
     predictions="$3"  # model including path
+    cmdargs="${@:4}" # extra arguments
 
     echo "Evaluating model ${model}."
 
@@ -97,75 +80,162 @@ function evaluate_model {
 }
 
 
-#############################
-# first run
-#############################
+#####################################
+# prepare file lists and spectrograms
+#####################################
+function stage1_prepare {
+    echo "Preparing file lists."
+    mkdir $LISTPATH 2> /dev/null
+    "$here/code/create_filelists.py" "$LABELPATH" $TRAIN > "$LISTPATH/train"
+    "$here/code/create_filelists.py" "$LABELPATH" $TEST > "$LISTPATH/test"
 
-echo "First training run."
-for i in `seq $model_count`; do
-    model="$WORKPATH/model_first_${i}"
-    if [ ! -f "${model}.h5" ]; then # check for existence
-        train_model "${model}" train $i
+    echo "Preparing spectrograms."
+    mkdir $SPECTPATH 2> /dev/null
+    "$here/code/prepare_spectrograms.sh" "${AUDIOPATH}" "${SPECTPATH}"
+}
+
+#############################
+# first training run
+#############################
+function stage1_train {
+    echo "First training run."
+
+    # process model and fold indices
+    if [ ${1:0:1} != '-' ]; then
+        # index is given as first argument
+        idxs="$1"
+        cmdargs="${@:2}"
     else
-        echo "Using existing model ${model}."
+        idxs=`seq ${model_count}`
+        cmdargs="${@:1}"
     fi
-    prediction="${model}.prediction"
-    if [ ! -f "${prediction}.h5" ]; then # check for existence
-        evaluate_model "${model}" test "${prediction}"
-    else
-        echo "Using existing predictions ${prediction}."
-    fi
-done
 
-
-#############################
-# compute pseudo_labels
-#############################
-
-echo "Analyzing first run."
-# prediction by bagging
-"$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out-prefix="$TEST/" --out-suffix='.wav' --out "$LISTPATH/test_pseudo"
-
-# filter list by threshold
-# split in half randomly
-"$here/code/make_pseudo.py" "$LISTPATH/test_pseudo" ${pseudo_threshold} "$LISTPATH/test_pseudo_1" "$LISTPATH/test_pseudo_2"
-
-# merge train filelist and half pseudo filelists
-for h in 1 2; do
-    cat "$LISTPATH/train" "$LISTPATH/test_pseudo_${h}" > "$LISTPATH/train_pseudo_${h}"
-done
-
-
-#############################
-# second run
-#############################
-
-echo "Second training run."
-for i in `seq $model_count`; do
-    for h in 1 2; do
-        model="$WORKPATH/model_second_${i}_${h}"
+    for i in ${idxs}; do
+        model="$WORKPATH/model_first_${i}"
         if [ ! -f "${model}.h5" ]; then # check for existence
-            train_model "${model}" "train_pseudo_${h}" $i
+            echo "Training model ${model}."
+            train_model "${model}" train ${i} ${cmdargs}
+            echo "Done training model ${model}."
         else
             echo "Using existing model ${model}."
         fi
+    done
+}
+
+#############################
+# first prediction run
+#############################
+function stage1_predict {
+    echo "Computing first stage predictions."
+
+    cmdargs="${@:1}"    
+    for i in `seq ${model_count}`; do
+        model="$WORKPATH/model_first_${i}"
         prediction="${model}.prediction"
         if [ ! -f "${prediction}.h5" ]; then # check for existence
-            evaluate_model "${model}" test "${prediction}"
+            evaluate_model "${model}" test "${prediction}" ${cmdargs}
         else
             echo "Using existing predictions ${prediction}."
         fi
     done
-done
+    
+    # prediction by bagging
+    echo "Bagging first stage predictions."
+    "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$first_predictions" --out-header
+    echo "Done. First stage predictions are in ${first_predictions}."
+}
 
+#############################
+# compute pseudo_labels
+#############################
+function stage2_prepare {
+    echo "Prepare second run by analyzing first run."
+    
+    # filter list by threshold
+    # split in half randomly
+    "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/test_pseudo_%(fold)i" --out-prefix="$TEST/" --out-suffix='.wav' 
+
+    # merge train filelist and half pseudo filelists
+    for h in `seq ${pseudo_folds}`; do
+        cat "$LISTPATH/train" "$LISTPATH/test_pseudo_${h}" > "$LISTPATH/train_pseudo_${h}"
+    done
+}
+
+#############################
+# second run
+#############################
+function stage2_train {
+    echo "Second training run."
+    
+    # process model and fold indices
+    if [ ${1:0:1} != '-' ]; then
+        # index is given as first argument
+        idxs="$1"
+        if [ ${2:0:1} != '-' ]; then
+            # index is given as second argument
+            folds="$2"
+            cmdargs="${@:3}"
+        else
+            folds=`seq ${pseudo_folds}`
+            cmdargs="${@:2}"
+        fi
+    else
+        idxs=`seq ${model_count}`
+        folds=`seq ${pseudo_folds}`
+        cmdargs="${@:1}"
+    fi
+
+    for i in $idxs; do
+        for h in $folds; do
+            model="$WORKPATH/model_second_${i}_${h}"
+            if [ ! -f "${model}.h5" ]; then # check for existence
+                echo "Training model ${model}."
+                train_model "${model}" "train_pseudo_${h}" $i
+                echo "Done training model ${model}."
+            else
+                echo "Using existing model ${model}."
+            fi
+        done
+    done
+}
 
 #############################################
 # prediction by bagging all available models
 ############################################
+function stage2_predict {
+    echo "Computing final predictions."
+    
+    cmdargs="${@:1}"
+    for i in `seq ${model_count}`; do
+        for h in `seq ${pseudo_folds}`; do
+            model="$WORKPATH/model_second_${i}_${h}"
+            prediction="${model}.prediction"
+            if [ ! -f "${prediction}.h5" ]; then # check for existence
+                evaluate_model "${model}" test "${prediction}" ${cmdargs}
+            else
+                echo "Using existing predictions ${prediction}."
+            fi
+        done
+    done
 
-echo "Computing final predictions."
-final_predictions="$WORKPATH/prediction.csv"
-"$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header
+    echo "Bagging final predictions."
+    "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header
+    echo "Done. Final predictions are in ${final_predictions}."
+}
 
-echo "Done!"
-echo "Predictions are in $final_predictions"
+###################################################################
+
+if [ "$1" == 'help' -o "$1" == '-help' -o "$1" == '--help' ]; then
+    echo "Proposal for Bird audio detection challenge 2017"
+    echo "by Thomas Grill <thomas.grill@ofai.at>"
+    echo ""
+    echo "Without any arguments, the full two-stage train/predict sequence is run"
+    echo "Subtasks can be run by specifying one of: stage1_prepare, stage1_train, stage1_predict, stage2_prepare, stage2_train, stage2_predict"
+    
+elif [ "$1" == "" ]; then
+    echo "Running full two-stage train/predict sequence"
+    stage1_prepare && stage1_train && stage1_predict && stage2_prepare && stage2_train && stage2_predict
+else
+    echo "Running sub-task $1 with arguments ${@:2}"
+    ${@:1}
+fi

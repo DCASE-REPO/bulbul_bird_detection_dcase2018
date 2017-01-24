@@ -21,7 +21,7 @@ Python (version 2.7): https://www.python.org/
 numpy: http://www.numpy.org/
 Theano: https://github.com/Theano/Theano
 lasagne: https://github.com/Lasagne/Lasagne
-simplenn: https://jobim.ofai.at/gitlab/gr/simplenn
+simplenn: https://jobim.ofai.at/gitlab/gr/simplenn (git clone might not work, use archive download)
 
 
 Running the training/prediction:

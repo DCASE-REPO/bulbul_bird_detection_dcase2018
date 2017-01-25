@@ -23,11 +23,13 @@ SPECTPATH="$WORKPATH/spect"
 first_predictions="$WORKPATH/prediction_first.csv"
 final_predictions="$WORKPATH/prediction_final.csv"
 
-# output color
-#RED='\033[0;31m'
-#GREEN='\033[0;32m'
-#NC='\033[0m' # No Color
-#alias echo="echo -e"
+
+function echo_info {
+    echo -e "\e[1m\e[34m${@}\e[0m"
+}
+function echo_status {
+    echo -e "\e[1m${@}\e[0m"
+}
 
 #############################
 # define training
@@ -38,7 +40,7 @@ function train_model {
     seed="$3"
     cmdargs="${@:4}"
 
-    echo "${RED}Computing model ${model} with network ${NETWORK}.${NC}"
+    echo_status "Computing model ${model} with network ${NETWORK}."
 
     "$here/code/simplenn_main.py" \
     --mode=train \
@@ -59,8 +61,6 @@ function train_model {
     --save "${model}.h5" \
     ${net_options} \
     ${cmdargs}
-    
-    echo
 }
 
 #############################
@@ -72,7 +72,7 @@ function evaluate_model {
     predictions="$3"  # model including path
     cmdargs="${@:4}" # extra arguments
 
-    echo "${RED}Evaluating model ${model}.${NC}"
+    echo_status "Evaluating model ${model}."
 
     "$here/code/simplenn_main.py" \
     --mode=evaluate \
@@ -85,8 +85,6 @@ function evaluate_model {
     --load "${model}.h5" \
     --save "${predictions}.h5" \
     ${cmdargs}
-    
-    echo
 }
 
 
@@ -94,22 +92,21 @@ function evaluate_model {
 # prepare file lists and spectrograms
 #####################################
 function stage1_prepare {
-    echo "${RED}Preparing file lists.${NC}"
+    echo_status "Preparing file lists."
     mkdir $LISTPATH 2> /dev/null
-    "$here/code/create_filelists.py" "$LABELPATH" $TRAIN > "$LISTPATH/train"
-    "$here/code/create_filelists.py" "$LABELPATH" $TEST > "$LISTPATH/test"
+    "$here/code/create_filelists.py" "$LABELPATH" $TRAIN > "$LISTPATH/train" || return $?
+    "$here/code/create_filelists.py" "$LABELPATH" $TEST > "$LISTPATH/test" || return $?
 
-    echo "${RED}Preparing spectrograms.${NC}"
+    echo_status "Preparing spectrograms."
     mkdir $SPECTPATH 2> /dev/null
     "$here/code/prepare_spectrograms.sh" "${AUDIOPATH}" "${SPECTPATH}"
-    echo
 }
 
 #############################
 # first training run
 #############################
 function stage1_train {
-    echo "${RED}First training stage.${NC}"
+    echo_status "First training stage."
 
     # process model and fold indices
     if [ "$1" != "" -a  "${1:0:1}" != '-' ]; then
@@ -124,65 +121,60 @@ function stage1_train {
     for i in ${idxs}; do
         model="$WORKPATH/model_first_${i}"
         if [ ! -f "${model}.h5" ]; then # check for existence
-            echo "${RED}Training model ${model}.${NC}"
-            res=$(train_model "${model}" train ${i} ${cmdargs})
-            if [ ${res} -ne 0 ]; then return ${res}; fi
-            echo "${RED}Done training model ${model}.${NC}"
+            echo_status "Training model ${model}."
+            train_model "${model}" train ${i} ${cmdargs} || return $?
+            echo_status "Done training model ${model}."
         else
-            echo "${RED}Using existing model ${model}.${NC}"
+            echo_status "Using existing model ${model}."
         fi
     done
-    echo
 }
 
 #############################
 # first prediction run
 #############################
 function stage1_predict {
-    echo "${RED}Computing first stage predictions.${NC}"
+    echo_status "Computing first stage predictions."
 
     cmdargs="${@:1}"    
     for i in `seq ${model_count}`; do
         model="$WORKPATH/model_first_${i}"
         prediction="${model}.prediction"
         if [ ! -f "${prediction}.h5" ]; then # check for existence
-            res=$(evaluate_model "${model}" test "${prediction}" ${cmdargs})
-            if [ ${res} -ne 0 ]; then return ${res}; fi
+            evaluate_model "${model}" test "${prediction}" ${cmdargs} || return $?
         else
-            echo "${RED}Using existing predictions ${prediction}.${NC}"
+            echo_status "Using existing predictions ${prediction}."
         fi
     done
     
     # prediction by bagging
-    echo "${RED}Bagging first stage predictions."
-    "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$first_predictions" --out-header
-    echo "${RED}Done. First stage predictions are in ${first_predictions}."
-    echo
+    echo_status "Bagging first stage predictions."
+    "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$first_predictions" --out-header || return $?
+    echo_status "Done. First stage predictions are in ${first_predictions}."
 }
 
 #############################
 # compute pseudo_labels
 #############################
 function stage2_prepare {
-    echo "${RED}Prepare second stage by analyzing first stage.${NC}"
+    echo_status "Prepare second stage by analyzing first stage."
     
     # filter list by threshold
     # split in half randomly
-    "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/test_pseudo_%(fold)i" --out-prefix="$TEST/" --out-suffix='.wav' 
+    "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/test_pseudo_%(fold)i" --out-prefix="$TEST/" --out-suffix='.wav' || return $?
 
     # merge train filelist and half pseudo filelists
     for h in `seq ${pseudo_folds}`; do
         cat "$LISTPATH/train" "$LISTPATH/test_pseudo_${h}" > "$LISTPATH/train_pseudo_${h}"
     done
-    echo "${RED}Prepared file lists for second stage.${NC}"
-    echo
+    echo_status "Prepared file lists for second stage."
 }
 
 #############################
 # second run
 #############################
 function stage2_train {
-    echo "${RED}Second training stage.${NC}"
+    echo_status "Second training stage."
     
     # process model and fold indices
     if [ "$1" != "" -a "${1:0:1}" != '-' ]; then
@@ -206,23 +198,21 @@ function stage2_train {
         for h in $folds; do
             model="$WORKPATH/model_second_${i}_${h}"
             if [ ! -f "${model}.h5" ]; then # check for existence
-                echo "${RED}Training model ${model}.${NC}"
-                res=$(train_model "${model}" "train_pseudo_${h}" ${i} ${cmdargs})
-                if [ ${res} -ne 0 ]; then return ${res}; fi
-                echo "${RED}Done training model ${model}.${NC}"
+                echo_status "Training model ${model}."
+                train_model "${model}" "train_pseudo_${h}" ${i} ${cmdargs} || return $?
+                echo_status "Done training model ${model}."
             else
-                echo "${RED}Using existing model ${model}.${NC}"
+                echo_status "Using existing model ${model}."
             fi
         done
     done
-    echo
 }
 
 #############################################
 # prediction by bagging all available models
 ############################################
 function stage2_predict {
-    echo "${RED}Computing final predictions.${NC}"
+    echo_status "Computing final predictions."
     
     cmdargs="${@:1}"
     for i in `seq ${model_count}`; do
@@ -230,36 +220,33 @@ function stage2_predict {
             model="$WORKPATH/model_second_${i}_${h}"
             prediction="${model}.prediction"
             if [ ! -f "${prediction}.h5" ]; then # check for existence
-                res=$(evaluate_model "${model}" test "${prediction}" ${cmdargs})
-                if [ ${res} -ne 0 ]; then return ${res}; fi
+                evaluate_model "${model}" test "${prediction}" ${cmdargs} || return $?
             else
-                echo "${RED}Using existing predictions ${prediction}.${NC}"
+                echo_status "Using existing predictions ${prediction}."
             fi
         done
     done
 
-    echo "${RED}Bagging final predictions.${NC}"
-    "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header
-    echo "${RED}Done. Final predictions are in ${final_predictions}.${NC}"
-    echo
+    echo_status "Bagging final predictions."
+    "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header || return $?
+    echo_status "Done. Final predictions are in ${final_predictions}."
 }
 
 ###################################################################
 
 if [ "$1" == 'help' -o "$1" == '-help' -o "$1" == '--help' ]; then
-    echo "${GREEN}Proposal for the Bird audio detection challenge 2017"
-    echo "See http://machine-listening.eecs.qmul.ac.uk/bird-audio-detection-challenge"
-    echo "by Thomas Grill <thomas.grill@ofai.at>"
-    echo ""
-    echo "Without any arguments, the full two-stage train/predict sequence is run"
-    echo "Subtasks can be run by specifying one of: stage1_prepare, stage1_train, stage1_predict, stage2_prepare, stage2_train, stage2_predict"
-    echo "${NC}"
+    echo_info "Proposal for the Bird audio detection challenge 2017"
+    echo_info "See http://machine-listening.eecs.qmul.ac.uk/bird-audio-detection-challenge"
+    echo_info "by Thomas Grill <thomas.grill@ofai.at>"
+    echo_info ""
+    echo_info "Without any arguments, the full two-stage train/predict sequence is run"
+    echo_info "Subtasks can be run by specifying one of: stage1_prepare, stage1_train, stage1_predict, stage2_prepare, stage2_train, stage2_predict"
     
 elif [ "$1" == "" -o "${1:0:1}" == '-' ]; then
-    echo "${GREEN}Running full two-stage train/predict sequence${NC}"
+    echo_info "Running full two-stage train/predict sequence:"
     cmdargs="${@:1}"
     stage1_prepare ${cmdargs} && stage1_train ${cmdargs} && stage1_predict ${cmdargs} && stage2_prepare ${cmdargs} && stage2_train ${cmdargs} && stage2_predict ${cmdargs} 
 else
-    echo "${GREEN}Running sub-task ${1}${NC}"
+    echo_info "Running sub-task ${1}:"
     ${@:1}
 fi

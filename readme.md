@@ -18,7 +18,7 @@ Required software:
 ------------------
 
 Python (version 2.7): https://www.python.org/
-numpy: http://www.numpy.org/
+numpy: http://www.numpy.org
 Theano: https://github.com/Theano/Theano
 lasagne: https://github.com/Lasagne/Lasagne
 simplenn: https://jobim.ofai.at/gitlab/gr/simplenn (git clone might not work, use archive download)
@@ -46,7 +46,7 @@ With **run.sh**, several steps are executed in sequence:
 
 * **stage2_train**: Second training run, producing more network models
 
-* **stage2_predict**: Final predictions, emplying all network models
+* **stage2_predict**: Final predictions, employing all network models
 
 
 If the spectrogram files, network models or prediction files are already present, they are not regenerated.

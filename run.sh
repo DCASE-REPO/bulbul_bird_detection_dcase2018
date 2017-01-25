@@ -24,12 +24,24 @@ first_predictions="$WORKPATH/prediction_first.csv"
 final_predictions="$WORKPATH/prediction_final.csv"
 
 
+# colored text if possible
+if command -v tput >/dev/null 2>&1; then
+    text_bold=$(tput bold)
+    text_boldblue=$(tput setaf 4)
+    text_normal=$(tput sgr0)
+else
+    text_bold=
+    text_boldblue=
+    text_normal=
+fi
+
 function echo_info {
-    echo -e "\e[1m\e[34m${@}\e[0m"
+    echo -e "${text_blue}${text_bold}${@}${text_normal}"
 }
 function echo_status {
-    echo -e "\e[1m${@}\e[0m"
+    echo -e "${text_bold}${@}${text_normal}"
 }
+
 
 #############################
 # define training
@@ -86,7 +98,6 @@ function evaluate_model {
     --save "${predictions}.h5" \
     ${cmdargs}
 }
-
 
 #####################################
 # prepare file lists and spectrograms

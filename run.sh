@@ -105,8 +105,9 @@ function evaluate_model {
 function stage1_prepare {
     echo_status "Preparing file lists."
     mkdir $LISTPATH 2> /dev/null
-    "$here/code/create_filelists.py" "$LABELPATH" $TRAIN > "$LISTPATH/train" || return $?
-    "$here/code/create_filelists.py" "$LABELPATH" $TEST > "$LISTPATH/test" || return $?
+
+    "$here/code/create_filelists.py" "$LABELPATH" ${TRAIN} --out "$LISTPATH/%(fold)s_%(num)i" --num ${model_count} --folds "train=$((model_count-1)),val=1" || return $?
+    "$here/code/create_filelists.py" "$LABELPATH" ${TEST} --out "$LISTPATH/%(fold)s" --num ${model_count} --folds "test=1"  || return $?
 
     echo_status "Preparing spectrograms."
     mkdir $SPECTPATH 2> /dev/null
@@ -133,7 +134,7 @@ function stage1_train {
         model="$WORKPATH/model_first_${i}"
         if [ ! -f "${model}.h5" ]; then # check for existence
             echo_status "Training model ${model}."
-            train_model "${model}" train ${i} ${cmdargs} || return $?
+            train_model "${model}" "train_${i}" ${i} ${cmdargs} || return $?
             echo_status "Done training model ${model}."
         else
             echo_status "Using existing model ${model}."
@@ -147,17 +148,17 @@ function stage1_train {
 function stage1_predict {
     echo_status "Computing first stage predictions."
 
-    cmdargs="${@:1}"    
+    cmdargs="${@:1}"
     for i in `seq ${model_count}`; do
         model="$WORKPATH/model_first_${i}"
         prediction="${model}.prediction"
         if [ ! -f "${prediction}.h5" ]; then # check for existence
-            evaluate_model "${model}" test "${prediction}" ${cmdargs} || return $?
+            evaluate_model "${model}" "test" "${prediction}" ${cmdargs} || return $?
         else
             echo_status "Using existing predictions ${prediction}."
         fi
     done
-    
+
     # prediction by bagging
     echo_status "Bagging first stage predictions."
     "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$first_predictions" --out-header || return $?
@@ -169,14 +170,16 @@ function stage1_predict {
 #############################
 function stage2_prepare {
     echo_status "Prepare second stage by analyzing first stage."
-    
+
     # filter list by threshold
     # split in half randomly
     "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/test_pseudo_%(fold)i" --out-prefix="$TEST/" --out-suffix='.wav' || return $?
 
     # merge train filelist and half pseudo filelists
-    for h in `seq ${pseudo_folds}`; do
-        cat "$LISTPATH/train" "$LISTPATH/test_pseudo_${h}" > "$LISTPATH/train_pseudo_${h}"
+    for i in `seq ${model_count}`; do
+        for h in `seq ${pseudo_folds}`; do
+            cat "$LISTPATH/train_${i}" "$LISTPATH/test_pseudo_${h}" > "$LISTPATH/train_${i}_pseudo_${h}"
+        done
     done
     echo_status "Prepared file lists for second stage."
 }
@@ -186,7 +189,7 @@ function stage2_prepare {
 #############################
 function stage2_train {
     echo_status "Second training stage."
-    
+
     # process model and fold indices
     if [ "$1" != "" -a "${1:0:1}" != '-' ]; then
         # index is given as first argument
@@ -204,13 +207,13 @@ function stage2_train {
         folds=`seq ${pseudo_folds}`
         cmdargs="${@:1}"
     fi
-    
+
     for i in $idxs; do
         for h in $folds; do
             model="$WORKPATH/model_second_${i}_${h}"
             if [ ! -f "${model}.h5" ]; then # check for existence
                 echo_status "Training model ${model}."
-                train_model "${model}" "train_pseudo_${h}" ${i} ${cmdargs} || return $?
+                train_model "${model}" "train_${i}_pseudo_${h}" ${i} ${cmdargs} || return $?
                 echo_status "Done training model ${model}."
             else
                 echo_status "Using existing model ${model}."
@@ -224,7 +227,7 @@ function stage2_train {
 ############################################
 function stage2_predict {
     echo_status "Computing final predictions."
-    
+
     cmdargs="${@:1}"
     for i in `seq ${model_count}`; do
         for h in `seq ${pseudo_folds}`; do
@@ -252,7 +255,6 @@ if [ "$1" == 'help' -o "$1" == '-help' -o "$1" == '--help' ]; then
     echo_info ""
     echo_info "Without any arguments, the full two-stage train/predict sequence is run"
     echo_info "Subtasks can be run by specifying one of: stage1_prepare, stage1_train, stage1_predict, stage2_prepare, stage2_train, stage2_predict"
-    
 elif [ "$1" == "" -o "${1:0:1}" == '-' ]; then
     echo_info "Running full two-stage train/predict sequence:"
     cmdargs="${@:1}"

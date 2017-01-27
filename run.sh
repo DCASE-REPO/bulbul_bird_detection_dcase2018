@@ -3,10 +3,6 @@
 # Training and prediction for the QMUL Bird audio detection challenge 2017
 # http://machine-listening.eecs.qmul.ac.uk/bird-audio-detection-challenge/
 # Thomas Grill <thomas.grill@ofai.at>
-#
-# Training: 8 GiB RAM, 4 GiB GPU RAM
-# Evaluation: 8 GiB RAM, 2 GiB GPU RAM
-
 
 here="${0%/*}"
 
@@ -36,7 +32,7 @@ else
 fi
 
 function echo_info {
-    echo -e "${text_blue}${text_bold}${@}${text_normal}"
+    echo -e "${text_boldblue}${@}${text_normal}"
 }
 function echo_status {
     echo -e "${text_bold}${@}${text_normal}"

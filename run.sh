@@ -17,6 +17,7 @@ SPECTPATH="$WORKPATH/spect"
 
 # locations of prediction files
 first_predictions="$WORKPATH/prediction_first.csv"
+second_predictions="$WORKPATH/prediction_second.csv"
 final_predictions="$WORKPATH/prediction_final.csv"
 
 
@@ -238,6 +239,7 @@ function stage2_predict {
     done
 
     echo_status "Bagging final predictions."
+    "$here/code/predict.py" "$WORKPATH"/model_second*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$second_predictions" --out-header || return $?
     "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header || return $?
     echo_status "Done. Final predictions are in ${final_predictions}."
 }

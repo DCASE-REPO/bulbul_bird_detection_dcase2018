@@ -1,3 +1,6 @@
+# Definition of network architecture and other model parameters
+# The network has a total of 373169 weights.
+
 # number of models for bagging
 model_count=5
 

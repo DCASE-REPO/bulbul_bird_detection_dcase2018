@@ -18,3 +18,6 @@ WORKPATH="/tmp/bird_workspace/"
 
 # network configuration to use (network_$NETWORK.inc file)
 NETWORK=final_submission
+
+# email for notification on finished subtasks (if email address is given)
+EMAIL=

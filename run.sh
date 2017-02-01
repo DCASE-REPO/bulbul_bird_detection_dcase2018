@@ -39,6 +39,11 @@ function echo_status {
     echo -e "${text_bold}${@}${text_normal}"
 }
 
+function email_status {
+    if [ "${EMAIL}" != "" ]; then
+        echo -e "Subject: run.sh - ${1}\n${@:2}" | sendmail "${EMAIL}"
+    fi
+}
 
 #############################
 # define training
@@ -69,7 +74,11 @@ function train_model {
     --layers "${net_layers}" \
     --save "${model}.h5" \
     ${net_options} \
-    ${cmdargs}
+    ${cmdargs} || return $?
+
+    loss=`python -c  'import h5py,sys; print h5py.File(sys.argv[1]+".h5","r")["training"]["train_loss_epoch"][-1]' ${model}`
+    echo_status "Done with training model ${model}. Final loss = ${loss}."
+    email_status "Done with training model ${model}" "Final loss = ${loss}."
 }
 
 #############################
@@ -106,9 +115,12 @@ function stage1_prepare {
     "$here/code/create_filelists.py" "$LABELPATH" ${TRAIN} --out "$LISTPATH/%(fold)s_%(num)i" --num ${model_count} --folds "train=$((model_count-1)),val=1" || return $?
     "$here/code/create_filelists.py" "$LABELPATH" ${TEST} --out "$LISTPATH/%(fold)s" --num ${model_count} --folds "test=1"  || return $?
 
-    echo_status "Preparing spectrograms."
+    echo_status "Computing spectrograms."
     mkdir $SPECTPATH 2> /dev/null
     "$here/code/prepare_spectrograms.sh" "${AUDIOPATH}" "${SPECTPATH}"
+    echo_status "Done computing spectrograms."
+
+    email_status "Done with stage1 preparations" "Computed filelists and spectrograms."
 }
 
 #############################
@@ -160,6 +172,8 @@ function stage1_predict {
     echo_status "Bagging first stage predictions."
     "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$first_predictions" --out-header || return $?
     echo_status "Done. First stage predictions are in ${first_predictions}."
+
+    email_status "Done with stage1 predictions" "First stage predictions are in ${first_predictions}."
 }
 
 #############################
@@ -179,6 +193,8 @@ function stage2_prepare {
         done
     done
     echo_status "Prepared file lists for second stage."
+
+    email_status "Done with stage2 preparations" "Generated pseudo-labeled training data."
 }
 
 #############################
@@ -242,6 +258,8 @@ function stage2_predict {
     "$here/code/predict.py" "$WORKPATH"/model_second*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$second_predictions" --out-header || return $?
     "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header || return $?
     echo_status "Done. Final predictions are in ${final_predictions}."
+
+    email_status "Done with stage2 predictions" "Final predictions are in ${final_predictions}."
 }
 
 ###################################################################

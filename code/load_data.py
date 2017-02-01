@@ -65,6 +65,7 @@ else:
             raise ValueError("load_data needs data_type option")
         
         labelfiles = util.getarg(args, 'labels', '', label=label, dtype=str) # wildcards and/or comma-separated
+        targets_needed = util.getarg(args, 'targets_needed', True, label=label, dtype=bool)
         data_path = util.getarg(args, 'data', '', label=label, dtype=str)
         data_vars = util.getarg(args, 'data_vars', '', label=label, dtype=str)
         downmix = util.getarg(args, 'downmix', True, label=label, dtype=bool)
@@ -96,15 +97,22 @@ else:
         # read all available labels
         labels = {}
         for fns in labelfiles.split(','):
-            for fn in glob.glob(fns):
-                fid = os.path.splitext(os.path.split(fn)[-1])[0]
-                with open(fn) as f:
-                    for ln in f:
-                        i,l = ln.split(',')
-                        try:
-                            labels[os.path.join(fid,i)] = float(l) # true/false
-                        except ValueError:
-                            pass
+            if fns.strip():
+                for fn in glob.glob(fns):
+                    fid = os.path.splitext(os.path.split(fn)[-1])[0]
+                    with open(fn) as f:
+                        for ln in f:
+                            i,l = ln.strip().split(',')
+                            i = os.path.splitext(os.path.split(i)[-1])[0] # no path or extension
+                            ifull = os.path.join(fid,i)
+                            try:
+                                lval = float(l)
+                            except ValueError:
+                                # not a float
+                                continue
+                            if ifull in labels and labels[ifull] != lval:
+                                logging.warning("Label ID %s already present with different value (%f != %f)"%(ifull,labels[ifull],lval))
+                            labels[ifull] = lval # true/false
 
         # data variations
         data_vars = data_vars.split(',')
@@ -202,7 +210,11 @@ else:
             try:
                 tgt = labels[fileid_noext]
             except KeyError:
-                tgt = False
+                if targets_needed:
+                    logging.error("File ID '%s' not found in labels"%fileid_noext)
+                    raise
+                else:
+                    tgt = 0.
 
             if useclasses:
                 clss = classes.index(fileid_class)

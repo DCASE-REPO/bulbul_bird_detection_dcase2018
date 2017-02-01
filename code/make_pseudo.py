@@ -25,7 +25,7 @@ hdr = None
 with open(fnin, 'r') as fin:
     if args.filelist_header:
         hdr = fin.next()
-    ids = [id for id,rt in (ln.split(',') for ln in fin) if ok(float(rt))]
+    ids = [(id,rt) for id,rt in (ln.strip().split(',') for ln in fin) if ok(float(rt))]
 
 random.shuffle(ids)
 
@@ -34,5 +34,5 @@ for fold in range(folds):
     with open(fn, 'w') as fout:
         if args.out_header and hdr is not None:
             fout.write(hdr)
-        for id in ids[fold::folds]:
-            print >>fout, "%s%s%s" % (args.out_prefix, id, args.out_suffix)
+        for id, rt in ids[fold::folds]:
+            print >>fout, "%s%s%s,%s" % (args.out_prefix, id, args.out_suffix, rt)

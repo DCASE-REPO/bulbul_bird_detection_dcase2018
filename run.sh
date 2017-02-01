@@ -51,8 +51,9 @@ function email_status {
 function train_model {
     model="$1"  # model including path
     filelists="$2"  # file list to use
-    seed="$3"
-    cmdargs="${@:4}"
+    extralabels="$3"
+    seed="$4"
+    cmdargs="${@:5}"
 
     echo_status "Computing model ${model} with network ${NETWORK}."
 
@@ -63,9 +64,11 @@ function train_model {
     --inputs filelist:filelist \
     --var filelist:path="$LISTPATH" \
     --var filelist:lists="${filelists}" \
+    --var filelist:sep=',' \
+    --var filelist:column=0 \
     --process "filelistshuffle:shuffle(seed=$seed,memory=25000)" \
     --process "input:${here}/code/load_data.py(type=spect,downmix=0,cycle=0,denoise=1,width=${net_width},seed=$seed)" \
-    --var input:labels="${LABELPATH}"/'*.csv' \
+    --var input:labels="${LABELPATH}"/'*.csv',"${extralabels}" \
     --var input:data="${SPECTPATH}/%(id)s.h5" \
     --var input:data_vars=1k \
     --process collect:collect \
@@ -96,6 +99,7 @@ function evaluate_model {
     --mode=evaluate \
     --var input:labels="${LABELPATH}"/'*.csv' \
     --var input:data="${SPECTPATH}/%(id)s.h5" \
+    --var input:targets_needed=0 \
     --var filelist:path="$LISTPATH" \
     --var filelist:lists=$filelists \
     --var filelistshuffle:bypass=1 \
@@ -143,7 +147,7 @@ function stage1_train {
         model="$WORKPATH/model_first_${i}"
         if [ ! -f "${model}.h5" ]; then # check for existence
             echo_status "Training model ${model}."
-            train_model "${model}" "train_${i}" ${i} ${cmdargs} || return $?
+            train_model "${model}" "train_${i}" '' ${i} ${cmdargs} || return $?
             echo_status "Done training model ${model}."
         else
             echo_status "Using existing model ${model}."
@@ -184,12 +188,12 @@ function stage2_prepare {
 
     # filter list by threshold
     # split in half randomly
-    "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/test_pseudo_%(fold)i" --out-prefix="$TEST/" --out-suffix='.wav' || return $?
+    "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/testdata.pseudo_%(fold)i" --out-prefix="$TEST/" --out-suffix='.wav' || return $?
 
     # merge train filelist and half pseudo filelists
     for i in `seq ${model_count}`; do
         for h in `seq ${pseudo_folds}`; do
-            cat "$LISTPATH/train_${i}" "$LISTPATH/test_pseudo_${h}" > "$LISTPATH/train_${i}_pseudo_${h}"
+            cat "$LISTPATH/train_${i}" "$LISTPATH/testdata.pseudo_${h}" > "$LISTPATH/train_${i}_pseudo_${h}"
         done
     done
     echo_status "Prepared file lists for second stage."
@@ -226,7 +230,7 @@ function stage2_train {
             model="$WORKPATH/model_second_${i}_${h}"
             if [ ! -f "${model}.h5" ]; then # check for existence
                 echo_status "Training model ${model}."
-                train_model "${model}" "train_${i}_pseudo_${h}" ${i} ${cmdargs} || return $?
+                train_model "${model}" "train_${i}_pseudo_${h}" "$LISTPATH/testdata.pseudo_*" ${i} ${cmdargs} || return $?
                 echo_status "Done training model ${model}."
             else
                 echo_status "Using existing model ${model}."

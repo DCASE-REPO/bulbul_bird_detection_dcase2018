@@ -1,7 +1,7 @@
 Bird audio detection challenge 2017
 ===================================
 
-This is a submission for the [bird audio detection challenge 2017](http://machine-listening.eecs.qmul.ac.uk/bird-audio-detection-challenge/) using convolutional neural networks (CNNs) working on spectrograms.
+This is the winning submission for the [bird audio detection challenge 2017](http://machine-listening.eecs.qmul.ac.uk/bird-audio-detection-challenge/) using convolutional neural networks (CNNs) working on spectrograms.
 
 Contact address: Thomas Grill (thomas.grill@ofai.at)
 
@@ -21,7 +21,7 @@ Python (version 2.7): https://www.python.org/
 numpy: http://www.numpy.org
 Theano: https://github.com/Theano/Theano
 lasagne: https://github.com/Lasagne/Lasagne
-simplenn: https://jobim.ofai.at/gitlab/gr/simplenn (git clone might not work, use archive download)
+simplenn: https://jobim.ofai.at/gitlab/gr/simplenn
 
 Detailed installation instructions for Theano and lasagne can be found on https://github.com/Lasagne/Lasagne/wiki/From-Zero-to-Lasagne .
 
@@ -63,6 +63,6 @@ This can be used to train models in parallel, on several GPUs (or CPU cores).
 Important note:
 ---------------
 
-The spectrograms are calculated on audio that is resampled to 22k sample rate using ffmpeg/avconv before the STFT computation. It has been found that the method/quality of resampling varies greatly across different versions.
+The spectrograms are calculated on audio that is resampled to 22k sample rate using ffmpeg/avconv before the STFT computation. It has been found that the method/quality of resampling varies greatly across different ffmpeg/avconv versions.
 Our best results were achieved using avconv version 9.20-6:9.20-0ubuntu0.14.04.1 which employs an anti-aliasing low-pass filter with a relatively shallow slope prior to resampling.
 The performance differences to "better" resampling implementations using a steep anti-aliasing filter are noticeable and still subject to investigation.

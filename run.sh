@@ -6,7 +6,11 @@
 
 here="${0%/*}"
 
+# import general configuration
 . "$here/config.inc"
+
+# import spectral parametrization
+. "$here/spectral_features.inc"
 
 # import network/learning configuration
 . "$here/network_${NETWORK}.inc"
@@ -122,6 +126,7 @@ function stage1_prepare {
     echo_status "Computing spectrograms."
     mkdir $SPECTPATH 2> /dev/null
     "$here/code/prepare_spectrograms.sh" "${AUDIOPATH}" "${SPECTPATH}"
+
     echo_status "Done computing spectrograms."
 
     email_status "Done with stage1 preparations" "Computed filelists and spectrograms."

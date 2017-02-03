@@ -58,3 +58,11 @@ Advanced use:
 Each of the steps executed in **run.sh** can be run explicitly by specifying them as the first argument, such as in **run.sh stage1_train**.
 For the training steps, model indices can also be specified, e.g., **run.sh stage1_train 1**, with the index running from 1 to the number of models (typically 5).
 This can be used to train models in parallel, on several GPUs (or CPU cores).
+
+
+Important note:
+---------------
+
+The spectrograms are calculated on audio that is resampled to 22k sample rate using ffmpeg/avconv before the STFT computation. It has been found that the method/quality of resampling varies greatly across different versions.
+Our best results were achieved using avconv version 9.20-6:9.20-0ubuntu0.14.04.1 which employs an anti-aliasing low-pass filter with a relatively shallow slope prior to resampling.
+The performance differences to "better" resampling implementations using a steep anti-aliasing filter are noticeable and still subject to investigation.

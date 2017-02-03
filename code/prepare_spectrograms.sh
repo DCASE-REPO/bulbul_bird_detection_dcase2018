@@ -21,7 +21,7 @@ do
         echo "Making ${o}"
         if ! $here/extract_melspect.py --channels=mix-after -r ${SR} -f ${FPS} -l ${FFTLEN} -t mel -m ${FMIN} -M ${FMAX} -b ${BANDS} -s log --featname "features" --include-times --times-mode=borders "$f" "$o"; then
             echo "Failed making ${o} - exiting"
-            return $?
+            exit $?
         fi
     fi
 done

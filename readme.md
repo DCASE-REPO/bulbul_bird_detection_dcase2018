@@ -67,3 +67,4 @@ Important note:
 The spectrograms are calculated on audio that is resampled to 22k sample rate using ffmpeg/avconv before the STFT computation. It has been found that the method/quality of resampling varies greatly across different ffmpeg/avconv versions.
 Our best results were achieved using avconv version 9.20-6:9.20-0ubuntu0.14.04.1 which employs an anti-aliasing low-pass filter with a relatively shallow slope prior to resampling.
 The performance differences to "better" resampling implementations using a steep anti-aliasing filter are noticeable and still subject to investigation.
+A portable (but otherwise identical) variation avoiding the use of ffmpeg/avconv for WAV files with 44.1 kHz sample rate can be found with tag ['portable_submission'](https://jobim.ofai.at/gitlab/gr/bird_audio_detection_challenge_2017/tree/portable_submission). As stated above, the performance is slightly lower (about 1% AUROC) than the best results.

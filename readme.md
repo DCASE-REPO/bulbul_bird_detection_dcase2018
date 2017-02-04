@@ -1,7 +1,8 @@
 Bird audio detection challenge 2017
 ===================================
 
-This is the winning submission for the [bird audio detection challenge 2017](http://machine-listening.eecs.qmul.ac.uk/bird-audio-detection-challenge/) using convolutional neural networks (CNNs) working on spectrograms.
+This is the code base for the [bird audio detection challenge 2017](http://machine-listening.eecs.qmul.ac.uk/bird-audio-detection-challenge/) using convolutional neural networks (CNNs) working on spectrograms.
+The winning submission is tagged ['official_submission'](https://jobim.ofai.at/gitlab/gr/bird_audio_detection_challenge_2017/tree/official_submission).
 
 Contact address: Thomas Grill (thomas.grill@ofai.at)
 

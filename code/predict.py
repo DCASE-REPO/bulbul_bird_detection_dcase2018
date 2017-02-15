@@ -3,6 +3,8 @@ import numpy as np
 import h5py
 import os
 import sys
+from collections import defaultdict
+from itertools import izip
 
 import argparse
 parser = argparse.ArgumentParser()
@@ -21,31 +23,29 @@ args = parser.parse_args()
 facc = np.__dict__[args.acc]
 facc_id = np.__dict__[args.acc_id]
 
-resids = None
-res = []
+    
+res = defaultdict(list) # total results
 for fn in args.filenames:
+    resf = defaultdict(list) # per file
     with h5py.File(fn, 'r') as f5:
         print >>sys.stderr, "Reading", fn
         ids = f5['ids']['id'].value
-        if resids is None:
-            resids = sorted(list(set(ids)))
-        else:
-            assert set(resids) == set(ids)
-
         results = f5['results'].value.flatten()
-            
-        r = np.empty(len(resids), dtype=float)
-        for i,id in enumerate(resids):
-            ididxs = np.where(ids == id)[0]
-            if len(ididxs) != 1:
-                print >>sys.stderr, "%s: id=%s, %i times"%(fn,id,len(ididxs))
-            r[i] = facc_id(results[ididxs])
-        res.append(r)
-        
-res = np.asarray(res)
-fns = [os.path.splitext(os.path.split(fn)[-1])[0] for fn in args.filenames]
+        assert len(ids) == len(results)
+        for i, r in izip(ids, results):
+            resf[i].append(r)
+    # accumulate over file and add to total
+    for i,r in resf.iteritems():
+        if len(r) != 1:
+            print >>sys.stderr, "%s: id=%s, %i times"%(fn,i,len(r))
+        res[i].append(facc_id(r))
 
-mns = facc(res, axis=0)
+# sort ids        
+resids = sorted(res.keys())
+# calculate bagged results for each id
+mns = np.asarray([facc(res[i], axis=0) for i in resids])
+
+fns = [os.path.splitext(os.path.split(fn)[-1])[0] for fn in args.filenames]
 
 results = dict(zip((os.path.splitext(os.path.split(r)[-1])[0] for r in resids), mns))
 
@@ -65,7 +65,7 @@ if args.filelist:
                 try:
                     pred = results[fid]
                 except KeyError:
-                    print >>sys.stderr, "Prediction not found for %s" % fid
+                    print >>sys.stderr, "Prediction not found for %s, exiting" % fid
                     exit(-1)
                 if pred <= args.threshold or pred >= 1.-args.threshold:
                     print >>fout, "%s%s%s,%.6f" % (args.out_prefix, fid, args.out_suffix, pred)

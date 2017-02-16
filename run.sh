@@ -207,10 +207,15 @@ function stage1_validate {
     # prediction by bagging
     echo_status "Bagging first stage validations."
     filelists=`echo $LISTPATH/val_?`
-    "$here/code/predict.py" "$WORKPATH"/model_first_?.validation.h5 --filelist ${filelists// /,} --out "$first_validations" --keep-prefix --keep-suffix || return $?
-    echo_status "Done. First stage validations are in ${first_validations}."
+    "$here/code/predict.py" "$WORKPATH"/model_first_?.validation.h5 --filelist ${filelists// /,} --out "$first_validations" --keep-prefix --keep-suffix --out-header || return $?
+    filelists=""
+    for t in ${TRAIN}; do
+        filelists+=" ${LABELPATH}/${t}.csv"
+    done
+    auc=`"$here/code/evaluate_auc.py" "${first_validations}" ${filelists} --gt-header --pred-header --gt-suffix='.wav'`
+    echo_status "Done. First stage validation score is AUC=${auc}."
 
-    email_status "Done with stage1 validations" "First stage validations are in ${first_validations}."
+    email_status "Done with stage1 validations" "First stage validation score is AUC=${auc}."
 }
 
 #############################

@@ -193,15 +193,13 @@ function stage1_validate {
 
     cmdargs="${@:1}"
     for i in `seq ${model_count}`; do
-        for ci in `seq ${TEST_CLUSTERS}`; do
-            model="$WORKPATH/model_first_${i}_${ci}"
-            validation="${model}.validation"
-            if [ ! -f "${validation}.h5" ]; then # check for existence
-                evaluate_model "${model}" "val_${i}" "${validation}" ${cmdargs} #|| return $?
-            else
-                echo_status "Using existing validations ${validation}."
-            fi
-        done
+        model="$WORKPATH/model_first_${i}"
+        validation="${model}.validation"
+        if [ ! -f "${validation}.h5" ]; then # check for existence
+            evaluate_model "${model}" "val_${i}" "${validation}" ${cmdargs} #|| return $?
+        else
+            echo_status "Using existing validations ${validation}."
+        fi
     done
 
     first_validations="$WORKPATH/validation_first.csv"
@@ -209,7 +207,7 @@ function stage1_validate {
     # prediction by bagging
     echo_status "Bagging first stage validations."
     filelists=`echo $LISTPATH/val_?`
-    "$here/code/predict.py" "$WORKPATH"/model_first_?_?.validation.h5 --filelist ${filelists// /,} --out "$first_validations" --keep-prefix --keep-suffix || return $?
+    "$here/code/predict.py" "$WORKPATH"/model_first_?.validation.h5 --filelist ${filelists// /,} --out "$first_validations" --keep-prefix --keep-suffix || return $?
     echo_status "Done. First stage validations are in ${first_validations}."
 
     email_status "Done with stage1 validations" "First stage validations are in ${first_validations}."

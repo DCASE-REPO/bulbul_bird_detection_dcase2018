@@ -20,7 +20,7 @@ parser.add_argument("--keep-suffix", action='store_true', help="keep eventual it
 parser.add_argument("--out-prefix", type=str, default='', help="out item prefix (default='%(default)s')")
 parser.add_argument("--out-suffix", type=str, default='', help="out item suffix (default='%(default)s')")
 parser.add_argument("--out-header", action='store_true', help="write eventual filelist header")
-parser.add_argument("--skip-not-found", action='store_true', help="Skip files with missing predictions")
+parser.add_argument("--skip-missing", action='store_true', help="Skip files with missing predictions")
 args = parser.parse_args()
     
 facc = np.__dict__[args.acc]
@@ -69,8 +69,8 @@ if args.filelist:
                     try:
                         pred = results[fid]
                     except KeyError:
-                        print >>sys.stderr, "Prediction not found for %s," % fid
-                        if args.skip_not_found:
+                        print >>sys.stderr, "Prediction missing for %s," % fid
+                        if args.skip_missing:
                             print >>sys.stderr, "skipping."
                             continue
                         else:

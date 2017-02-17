@@ -207,7 +207,7 @@ function stage1_validate {
     # prediction by bagging
     echo_status "Bagging first stage validations."
     vallists=`echo $LISTPATH/val_?`
-    "$here/code/predict.py" "$WORKPATH"/model_first_?.validation.h5 --filelist ${vallists// /,} --out "$first_validations" --keep-prefix --keep-suffix --out-header || return $?
+    "$here/code/predict.py" "$WORKPATH"/model_first_?.validation.h5 --filelist ${vallists// /,} --out "$first_validations" --keep-prefix --keep-suffix --out-header --skip-missing || return $?
     filelists=""
     for t in ${TRAIN}; do
         filelists+=" ${LABELPATH}/${t}.csv"

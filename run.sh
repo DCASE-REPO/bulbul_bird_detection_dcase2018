@@ -305,6 +305,43 @@ function stage2_predict {
     email_status "Done with stage2 predictions" "Final predictions are in ${final_predictions}."
 }
 
+#############################
+# second stage validation
+#############################
+function stage2_validate {
+    echo_status "Computing second stage validations."
+
+    cmdargs="${@:1}"
+    for i in `seq ${model_count}`; do
+        for h in `seq ${pseudo_folds}`; do
+            model="$WORKPATH/model_second_${i}_${h}"
+            validation="${model}.validation"
+            if [ ! -f "${validation}.h5" ]; then # check for existence
+                evaluate_model "${model}" "val_${i}" "${validation}" ${cmdargs} #|| return $?
+            else
+                echo_status "Using existing validations ${validation}."
+            fi
+        done
+    done
+
+    second_validations="$WORKPATH/validation_second.csv"
+
+    # prediction by bagging
+    echo_status "Bagging first stage validations."
+    vallists=`echo $LISTPATH/val_?`
+    "$here/code/predict.py" "$WORKPATH"/model_second_?_?.validation.h5 --filelist ${vallists// /,} --out "$second_validations" --keep-prefix --keep-suffix --out-header --skip-missing || return $?
+    filelists=""
+    for t in ${TRAIN}; do
+        filelists+=" ${LABELPATH}/${t}.csv"
+    done
+    auc=`"$here/code/evaluate_auc.py" "${second_validations}" ${filelists} --splits ${vallists// /,} --gt-header --pred-header --gt-suffix='.wav'`
+    echo_status "Done. Second stage validation AUC score is ${auc}."
+
+    email_status "Done with stage2 validations" "Second stage validation AUC score is ${auc}."
+}
+
+
+
 ###################################################################
 
 if [ "$1" == 'help' -o "$1" == '-help' -o "$1" == '--help' ]; then

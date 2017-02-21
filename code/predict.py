@@ -32,7 +32,7 @@ for fn in args.filenames:
     with h5py.File(fn, 'r') as f5:
         print >>sys.stderr, "Reading", fn
         ids = f5['ids']['id'].value
-        results = f5['results'].value.flatten()
+        results = f5['results'][:,-1] # either scalar probability or two-element softmax output
         assert len(ids) == len(results)
         for i, r in izip(ids, results):
             resf[i].append(r)

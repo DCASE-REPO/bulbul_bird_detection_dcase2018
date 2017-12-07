@@ -6,6 +6,7 @@ import random
 import itertools
 import urllib
 import sys
+import pdb
 # local module
 
 
@@ -103,8 +104,11 @@ else:
                     with open(fn) as f:
                         for ln in f:
                             i,l = ln.strip().split(',')
-                            i = os.path.splitext(os.path.split(i)[-1])[0] # no path or extension
-                            ifull = os.path.join(fid,i)
+                            p,i = os.path.split(i)
+                            i = os.path.splitext(i)[0] # no extension
+                            if not p:
+                                p = fid
+                            ifull = os.path.join(p,i)
                             try:
                                 lval = float(l)
                             except ValueError:

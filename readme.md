@@ -20,11 +20,14 @@ Required software:
 
 Python (version 2.7): https://www.python.org/
 numpy: http://www.numpy.org
+
 Theano: https://github.com/Theano/Theano
 lasagne: https://github.com/Lasagne/Lasagne
-simplenn: https://jobim.ofai.at/gitlab/gr/simplenn
-
 Detailed installation instructions for Theano and lasagne can be found on https://github.com/Lasagne/Lasagne/wiki/From-Zero-to-Lasagne .
+
+simplenn: https://jobim.ofai.at/gitlab/gr/simplenn
+For the 'official_submission' a specially tagged version of simplenn should be installed:
+https://jobim.ofai.at/gitlab/gr/simplenn/repository/archive?ref=bird_audio_detection_challenge_2017
 
 
 Running the training/prediction:

@@ -70,6 +70,7 @@ function train_model {
     --var filelist:lists="${filelists}" \
     --var filelist:sep=',' \
     --var filelist:column=0 \
+    --process "cycle:cycle" \
     --process "filelistshuffle:shuffle(seed=$seed,memory=25000)" \
     --process "input:${here}/code/load_data.py(type=spect,downmix=0,cycle=0,denoise=1,width=${net_width},seed=$seed)" \
     --var input:labels="${LABELPATH}"/'*.csv',"${extralabels}" \
@@ -108,6 +109,7 @@ function evaluate_model {
     --var filelist:lists=$filelists \
     --var filelistshuffle:bypass=1 \
     --var augment:bypass=1 \
+    --var cycle:bypass=1 \
     --load "${model}.h5" \
     --save "${predictions}.h5" \
     ${cmdargs}

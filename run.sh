@@ -122,8 +122,8 @@ function stage1_prepare {
     echo_status "Preparing file lists."
     mkdir $LISTPATH 2> /dev/null
 
-    "$here/code/create_filelists.py" "$LABELPATH" ${TRAIN} --out "$LISTPATH/%(fold)s_%(num)i" --num ${model_count} --folds "train=$((model_count-1)),val=1" || return $?
-    "$here/code/create_filelists.py" "$LABELPATH" ${TEST} --out "$LISTPATH/%(fold)s" --num ${model_count} --folds "test=1"  || return $?
+    "$here/code/create_filelists.py" "$LABELPATH" ${TRAIN} --mode "train" --out "$LISTPATH/%(fold)s_%(num)i" || return $?
+    "$here/code/create_filelists.py" "$LABELPATH" ${TEST}  --mode "test"  --out "$LISTPATH/%(fold)s"         || return $?
 
     echo_status "Computing spectrograms."
     mkdir $SPECTPATH 2> /dev/null
@@ -227,10 +227,10 @@ function stage2_prepare {
     echo_status "Prepare second stage by analyzing first stage."
 
     # filter list by threshold
-    # split in half randomly
+    # split into folds randomly
     "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/testdata.pseudo_%(fold)i" --out-prefix="$TEST/" --out-suffix='.wav' || return $?
 
-    # merge train filelist and half pseudo filelists
+    # merge each train filelist with a pseudo filelist
     for i in `seq ${model_count}`; do
         for h in `seq ${pseudo_folds}`; do
             cat "$LISTPATH/train_${i}" "$LISTPATH/testdata.pseudo_${h}" > "$LISTPATH/train_${i}_pseudo_${h}"

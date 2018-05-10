@@ -103,7 +103,7 @@ else:
                     fid = os.path.splitext(os.path.split(fn)[-1])[0]
                     with open(fn) as f:
                         for ln in f:
-                            i,l = ln.strip().split(',')
+                            i,_,l = ln.strip().split(',')
                             p,i = os.path.split(i)
                             i = os.path.splitext(i)[0] # no extension
                             if not p:

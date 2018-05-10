@@ -5,16 +5,16 @@
 # - audio files (files must be $AUDIOPATH/$ID/*.wav)
 
 # path where label files are found
-LABELPATH="/home/thomas/salsa/bird_challenge/labels/"
+LABELPATH="/home/dans/dev/github/dcase2018_baseline/task3/labels/"
 # path where audio files are found (in dataset subfolders)
-AUDIOPATH="/home/thomas/salsa/bird_challenge/audio/"
+AUDIOPATH="/home/dans/dev/github/dcase2018_baseline/task3/audio/"
 # datasets making up the training set
-TRAIN="ff1010bird warblrb10k"
+TRAIN="ff1010bird warblrb10k BirdVox-DCASE-20k"
 # dataset making up the testing set (only one!)
-TEST=testdata
+TEST=BirdVox-DCASE-20k
 
 # where to put work data (must be writable)
-WORKPATH="/media/audiostreams/data/bird-challenge/results/master/"
+WORKPATH="/home/dans/dev/github/dcase2018_baseline/task3/workingfiles/"
 
 # network configuration to use (network_$NETWORK.inc file)
 NETWORK=final_submission

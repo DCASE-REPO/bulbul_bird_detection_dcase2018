@@ -32,7 +32,7 @@ for gtfn in args.gt:
         if args.gt_header:
             f.next()
         for ln in f:
-            k,v = ln.strip().split(',')
+            k,_,v = ln.strip().split(',')
             gt_labels[os.path.join(subpath,k)+args.gt_suffix] = float(v)
 
 gt_items = set(pred_probs.iterkeys())

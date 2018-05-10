@@ -2,7 +2,7 @@
 # The network has a total of 373169 weights.
 
 # number of models for bagging
-model_count=5
+model_count=3
 
 # length of spectrogram slice (must correspond to architecture below)
 net_width=1000

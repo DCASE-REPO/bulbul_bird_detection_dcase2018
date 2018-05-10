@@ -35,4 +35,4 @@ for fold in range(folds):
         if args.out_header and hdr is not None:
             fout.write(hdr)
         for id, rt in ids[fold::folds]:
-            print >>fout, "%s%s%s,%s" % (args.out_prefix, id, args.out_suffix, rt)
+            print >>fout, "%s%s%s,_,%s" % (args.out_prefix, id, args.out_suffix, rt)  # NB this outputs the class ID as "_", therefore assumes the test data in any given fold comes from a single unknown datasetid

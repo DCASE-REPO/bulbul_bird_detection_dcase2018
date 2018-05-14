@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from sklearn.metrics import roc_auc_score
+from scipy.stats import hmean
 import argparse
 import os
 import sys
@@ -43,9 +44,6 @@ missing = gt_items^pred_items
 if len(missing):
     print >>sys.stderr, "Items %s missing in either set"%missing
 
-auc_total = roc_auc_score([gt_labels[k] for k in both], [pred_probs[k] for k in both])
-print "%.6f"%auc_total,
-
 if args.splits:
     splaucs = []
     for splfn in args.splits.split(','):
@@ -56,5 +54,11 @@ if args.splits:
         both = gt_items&split
         splauc = roc_auc_score([gt_labels[k] for k in both], [pred_probs[k] for k in both])
         splaucs.append(splauc)
+
+    auc_hmean = hmean(splaucs)
+    print("%.6f" % (auc_hmean)),
     print "("+",".join("%.6f"%r for r in splaucs)+")",
+else:
+    auc_total = roc_auc_score([gt_labels[k] for k in both], [pred_probs[k] for k in both])
+    print "%.6f"%auc_total,
 print

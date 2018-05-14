@@ -85,7 +85,7 @@ function train_model {
     ${cmdargs} || return $?
 
     loss=`python -c  'import h5py,sys; print h5py.File(sys.argv[1]+".h5","r")["training"]["train_loss_epoch"][-1]' ${model}`
-    echo_status "Done with training model ${model}. Final loss = ${loss}."
+    echo_status "Done with training model ${model}. `date`. Final loss = ${loss}."
     email_status "Done with training model ${model}" "Final loss = ${loss}."
 }
 
@@ -182,7 +182,7 @@ function stage1_predict {
     # prediction by bagging
     echo_status "Bagging first stage predictions."
     "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$first_predictions" --out-header || return $?
-    echo_status "Done. First stage predictions are in ${first_predictions}."
+    echo_status "Done. `date`. First stage predictions are in ${first_predictions}."
 
     email_status "Done with stage1 predictions" "First stage predictions are in ${first_predictions}."
 }
@@ -215,7 +215,7 @@ function stage1_validate {
         filelists+=" ${LABELPATH}/${t}.csv"
     done
     auc=`"$here/code/evaluate_auc.py" "${first_validations}" ${filelists} --splits ${vallists// /,} --gt-header --pred-header --gt-suffix='.wav'`
-    echo_status "Done. First stage validation AUC score is ${auc}."
+    echo_status "Done. `date`. First stage validation AUC score is ${auc}."
 
     email_status "Done with stage1 validations" "First stage validation AUC score is ${auc}."
 }
@@ -302,7 +302,7 @@ function stage2_predict {
     echo_status "Bagging final predictions."
     "$here/code/predict.py" "$WORKPATH"/model_second*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$second_predictions" --out-header || return $?
     "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header || return $?
-    echo_status "Done. Final predictions are in ${final_predictions}."
+    echo_status "Done. `date`. Final predictions are in ${final_predictions}."
 
     email_status "Done with stage2 predictions" "Final predictions are in ${final_predictions}."
 }
@@ -337,7 +337,7 @@ function stage2_validate {
         filelists+=" ${LABELPATH}/${t}.csv"
     done
     auc=`"$here/code/evaluate_auc.py" "${second_validations}" ${filelists} --splits ${vallists// /,} --gt-header --pred-header --gt-suffix='.wav'`
-    echo_status "Done. Second stage validation AUC score is ${auc}."
+    echo_status "Done. `date`. Second stage validation AUC score is ${auc}."
 
     email_status "Done with stage2 validations" "Second stage validation AUC score is ${auc}."
 }

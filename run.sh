@@ -24,6 +24,8 @@ first_predictions="$WORKPATH/prediction_first.csv"
 second_predictions="$WORKPATH/prediction_second.csv"
 final_predictions="$WORKPATH/prediction_final.csv"
 
+# pre-expand the list of test filelists, needed by some of the python methods
+testfilelists="$LABELPATH`echo "$TEST" | sed -E "s# +#.csv,$LABELPATH#g"`.csv"
 
 # colored text if possible
 if command -v tput >/dev/null 2>&1; then
@@ -106,7 +108,8 @@ function evaluate_model {
     --var input:data="${SPECTPATH}/%(id)s.h5" \
     --var input:targets_needed=0 \
     --var filelist:path="$LISTPATH" \
-    --var filelist:lists=$filelists \
+    --var filelist:lists="$filelists" \
+    --var filelist:sep=',' \
     --var filelistshuffle:bypass=1 \
     --var augment:bypass=1 \
     --var cycle:bypass=1 \
@@ -181,7 +184,7 @@ function stage1_predict {
 
     # prediction by bagging
     echo_status "Bagging first stage predictions."
-    "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$first_predictions" --out-header || return $?
+    "$here/code/predict.py" "$WORKPATH"/model_first_?.prediction.h5 --filelist "$testfilelists" --filelist-header --out "$first_predictions" --out-header || return $?
     echo_status "Done. `date`. First stage predictions are in ${first_predictions}."
 
     email_status "Done with stage1 predictions" "First stage predictions are in ${first_predictions}."
@@ -228,7 +231,7 @@ function stage2_prepare {
 
     # filter list by threshold
     # split into folds randomly
-    "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/testdata.pseudo_%(fold)i" --out-prefix="$TEST/" --out-suffix='.wav' || return $?
+    "$here/code/make_pseudo.py" --filelist "$first_predictions" --filelist-header --threshold=${pseudo_threshold} --folds=${pseudo_folds} --out "$LISTPATH/testdata.pseudo_%(fold)i" --out-prefix-filelists="$testfilelists" --out-suffix='.wav' || return $?
 
     # merge each train filelist with a pseudo filelist
     for i in `seq ${model_count}`; do
@@ -300,8 +303,8 @@ function stage2_predict {
     done
 
     echo_status "Bagging final predictions."
-    "$here/code/predict.py" "$WORKPATH"/model_second*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$second_predictions" --out-header || return $?
-    "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$LABELPATH/$TEST.csv" --filelist-header --out "$final_predictions" --out-header || return $?
+    "$here/code/predict.py" "$WORKPATH"/model_second*.prediction.h5 --filelist "$testfilelists" --filelist-header --out "$second_predictions" --out-header || return $?
+    "$here/code/predict.py" "$WORKPATH"/model_*.prediction.h5 --filelist "$testfilelists" --filelist-header --out "$final_predictions" --out-header || return $?
     echo_status "Done. `date`. Final predictions are in ${final_predictions}."
 
     email_status "Done with stage2 predictions" "Final predictions are in ${final_predictions}."

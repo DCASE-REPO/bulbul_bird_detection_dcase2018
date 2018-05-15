@@ -9,7 +9,7 @@ parser.add_argument("--filelist-header", action='store_true', help="filelist fil
 parser.add_argument("--threshold", type=float, default=0.5, help="Threshold (default=%(default)s)")
 parser.add_argument("--folds", type=int, default=2, help="Number of folds (default=%(default)s)")
 parser.add_argument("--out", type=str, help="Out file template (default='%(default)s')")
-parser.add_argument("--out-prefix", type=str, default='', help="out item prefix (default='%(default)s')")
+parser.add_argument("--out-prefix-filelists", type=str, help="original filelists with out item prefixes included, for re-appending")
 parser.add_argument("--out-suffix", type=str, default='', help="out item suffix (default='%(default)s')")
 parser.add_argument("--out-header", action='store_true', help="write eventual filelist header")
 args = parser.parse_args()
@@ -18,6 +18,14 @@ fnin = args.filelist
 thr = args.threshold
 folds = args.folds
 fnout = args.out
+
+out_prefixes = {}
+for opfn in args.out_prefix_filelists.split(','):
+    with open(opfn, 'r') as f:
+        f.next()
+        for ln in f:
+            k,datasetid,v = ln.strip().split(',')
+            out_prefixes[k] = datasetid
 
 ok = lambda r: r <= thr or r >= 1.-thr
 
@@ -33,6 +41,6 @@ for fold in range(folds):
     fn = fnout%(dict(fold=fold+1))
     with open(fn, 'w') as fout:
         if args.out_header and hdr is not None:
-            fout.write(hdr)
+            fout.write(hdr.split(',')[0,2:])
         for id, rt in ids[fold::folds]:
-            print >>fout, "%s%s%s,_,%s" % (args.out_prefix, id, args.out_suffix, rt)  # NB this outputs the class ID as "_", therefore assumes the test data in any given fold comes from a single unknown datasetid
+            print >>fout, "%s/%s%s,%s,%s" % (out_prefixes[id], id, args.out_suffix, out_prefixes[id], rt)

@@ -58,12 +58,13 @@ if args.filelist:
     else:
         fout = sys.stdout
     
-    for fn in args.filelist.split(','):
+    for whichfilelist,fn in enumerate(args.filelist.split(',')):
         with open(fn, 'r') as flist:
             for lni,ln in enumerate(flist):
                 if lni == 0 and args.filelist_header:
-                    if args.out_header:
-                        print >>fout, ln.strip() # replicate header line
+                    if whichfilelist==0:
+                        if args.out_header:
+                            print >>fout, ln.strip().replace(',datasetid', '') # replicate header line but without datasetid
                 else:
                     fid = ln.strip().split(',')[0].strip() # first column only
                     try:

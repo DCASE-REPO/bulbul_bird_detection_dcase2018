@@ -126,7 +126,11 @@ function stage1_prepare {
     mkdir $LISTPATH 2> /dev/null
 
     "$here/code/create_filelists.py" "$LABELPATH" ${TRAIN} --mode "train" --out "$LISTPATH/%(fold)s_%(num)i" || return $?
-    "$here/code/create_filelists.py" "$LABELPATH" ${TEST}  --mode "test"  --out "$LISTPATH/%(fold)s"         || return $?
+    if [ "$TEST" = "" ]; then
+        echo_status "NOT computing file lists for test sets since no test sets were specified yet."
+    else
+        "$here/code/create_filelists.py" "$LABELPATH" ${TEST}  --mode "test"  --out "$LISTPATH/%(fold)s"         || return $?
+    fi
 
     echo_status "Computing spectrograms."
     mkdir $SPECTPATH 2> /dev/null
@@ -169,6 +173,12 @@ function stage1_train {
 # first stage prediction
 #############################
 function stage1_predict {
+
+    if [ "$TEST" = "" ]; then
+        echo_status "NOT computing first stage predictions since no test sets were specified yet."
+        return 1
+    fi
+
     echo_status "Computing first stage predictions."
 
     cmdargs="${@:1}"
@@ -287,6 +297,12 @@ function stage2_train {
 # by bagging all available models
 ############################################
 function stage2_predict {
+
+    if [ "$TEST" = "" ]; then
+        echo_status "NOT computing final predictions since no test sets were specified yet."
+        return 1
+    fi
+
     echo_status "Computing final predictions."
 
     cmdargs="${@:1}"

@@ -1,3 +1,33 @@
+Bird audio detection challenge 2018 - DCASE Task 3
+==================================================
+
+This is a bird audio detection system, derived from [Thomas Grill's "bulbul" system](https://jobim.ofai.at/gitlab/gr/bird_audio_detection_challenge_2017/tree/master), and modified to work as a baseline for the 2018 DCASE Task 3 [Bird Audio Detection task](http://dcase.community/challenge2018/task-bird-audio-detection).
+
+To use the system with the DCASE 2018 data, ensure that the WAV and CSV data files are arranged in the following subfolders (you may need to rename the downloaded files):
+
+* audio/
+     * BirdVox-DCASE-20k/
+     * ff1010bird/
+     * warblrb10k/
+* labels/
+     * BirdVox-DCASE-20k.csv
+     * ff1010bird.csv
+     * warblrb10k.csv
+
+The neural network system is desribed in the following publication:
+
+Grill, T. & Schlüter, J. (2017) Two Convolutional Neural Networks for Bird Detection in Audio Signals. 25th European Signal Processing Conference (EUSIPCO2017). Kos, Greece.
+  https://doi.org/10.23919/EUSIPCO.2017.8081512
+
+The system includes the ability to run in two stages, with 'pseudo-labelling' added after the first stage. For the baseline we only use the first stage.
+
+We have also modified the script so that the 3 training sets are used as the basis for the 3-fold crossvalidation used during training and validation, as recommended for the 2018 task.
+
+Thomas Grill's original readme is below:
+
+ = = =
+
+
 Bird audio detection challenge 2017
 ===================================
 

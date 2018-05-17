@@ -375,7 +375,9 @@ if [ "$1" == 'help' -o "$1" == '-help' -o "$1" == '--help' ]; then
 elif [ "$1" == "" -o "${1:0:1}" == '-' ]; then
     echo_info "Running full two-stage train/predict sequence:"
     cmdargs="${@:1}"
-    stage1_prepare ${cmdargs} && stage1_train ${cmdargs} && stage1_validate ${cmdargs} && stage1_predict ${cmdargs} && stage2_prepare ${cmdargs} # && stage2_train ${cmdargs} && stage2_validate ${cmdargs} && stage2_predict ${cmdargs}
+    stage1_prepare ${cmdargs} && stage1_train ${cmdargs} && stage1_validate ${cmdargs} && stage1_predict ${cmdargs}
+    ### Stage 2 deactivated for DCASE 2018 baseline - it might work, but hasn't been fully tested
+    # && stage2_prepare ${cmdargs} # && stage2_train ${cmdargs} && stage2_validate ${cmdargs} && stage2_predict ${cmdargs}
 else
     echo_info "Running sub-task ${1}:"
     ${@:1}

@@ -23,6 +23,8 @@ The system includes the ability to run in two stages, with 'pseudo-labelling' ad
 
 We have also modified the script so that the 3 training sets are used as the basis for the 3-fold crossvalidation used during training and validation, as recommended for the 2018 task.
 
+> This system attains **83% harmonic mean AUC** crossvalidation score.
+
 Thomas Grill's original readme is below:
 
  = = =

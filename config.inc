@@ -11,7 +11,7 @@ AUDIOPATH="/home/dans/dev/github/dcase2018_baseline/task3/audio/"
 # datasets making up the training set
 TRAIN="ff1010bird warblrb10k BirdVox-DCASE-20k"
 # datasets making up the testing set (multiple testing sets for dcase2018 task3; in baseline we ignore the fact that they are not one large pool)
-TEST=""
+TEST="chern_test PolandNFC_test warbrb10k_test"
 
 # where to put work data (must be writable)
 WORKPATH="/home/dans/dev/github/dcase2018_baseline/task3/workingfiles/"

@@ -23,7 +23,11 @@ The system includes the ability to run in two stages, with 'pseudo-labelling' ad
 
 We have also modified the script so that the 3 training sets are used as the basis for the 3-fold crossvalidation used during training and validation, as recommended for the 2018 task.
 
-**Performance:** This system attains **83% harmonic mean AUC** crossvalidation score.
+**Performance:** This system attains the following crossvalidation scores (harmonic mean AUC) during the DCASE Task 3 Bird Audio Detection challenge:
+
+* Crossvalidation: 83% (this score is output by the system when you perform the 3-fold xval)
+* Preview: 89% (online leaderboard)
+* Final: 87%
 
 **Runtime:** The time taken to train a model will depend on many factors. For us, on a machine with Titan Xp GPU and CuDNN enabled, a single model takes around 5 hours.
 For the full bulbul approach there are 6 models to train (3 rounds of cross-validation, and bulbul has two different training stages). This gives an estimate of 30 hours, plus extra time for feature extraction and other processes. 
